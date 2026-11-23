@@ -5,7 +5,7 @@
 	<key>CFBundleExecutable</key>
 	<string>QuickLookSeek</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.quicklookseek.QuickLookSeek</string>
+	<string>net.jinpark.quicklookseek</string>
 	<key>CFBundleName</key>
 	<string>QuickLook Seek</string>
 	<key>CFBundleDisplayName</key>
@@ -22,5 +22,11 @@
 	<true/>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/jinpark/quicklook-seek/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>y/TkPRiM+VgIv2vGWBQfKGRK3Eijr0dAjK9aIUbanmk=</string>
 </dict>
 </plist>

@@ -1,10 +1,17 @@
 import AppKit
 import ApplicationServices
 import ServiceManagement
+import Sparkle
 
-final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SPUStandardUserDriverDelegate {
     private let defaults = UserDefaults.standard
     private let seeker = QuickLookSeeker()
+    private lazy var updater = SPUStandardUpdaterController(
+        startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
+
+    // We're a menu bar app with no Dock icon, so let Sparkle remind about
+    // updates gently instead of popping a window over whatever you're doing.
+    var supportsGentleScheduledUpdateReminders: Bool { true }
     private var tap: ArrowKeyTap!
     private var statusItem: NSStatusItem!
     private var permissionTimer: Timer?
@@ -26,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        _ = updater
         tap = ArrowKeyTap { [unowned self] direction, shift in
             guard enabled else { return false }
             let amount = shift ? bigStep : step
@@ -73,6 +81,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let login = item("Launch at Login", #selector(toggleLaunchAtLogin))
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
+        let updates = NSMenuItem(title: "Check for Updates…",
+                                 action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)),
+                                 keyEquivalent: "")
+        updates.target = updater
+        menu.addItem(updates)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
     }
@@ -133,6 +146,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             NSWorkspace.shared.open(url)
         }
     }
+}
+
+// Diagnostic mode: `--probe [--seek <seconds>]` prints what the app sees in any
+// open Quick Look window, then exits. Launch it through LaunchServices so the
+// app's own Accessibility permission applies (not the terminal's):
+//   open -n -W --stdout /dev/stdout "/Applications/QuickLook Seek.app" --args --probe
+let arguments = CommandLine.arguments
+if arguments.contains("--probe") {
+    guard AXIsProcessTrusted() else {
+        print("QuickLook Seek doesn't have Accessibility permission.")
+        exit(1)
+    }
+    var delta: Double?
+    if let index = arguments.firstIndex(of: "--seek"), index + 1 < arguments.count {
+        delta = Double(arguments[index + 1])
+    }
+    let seeker = QuickLookSeeker()
+    seeker.matchNames = !arguments.contains("--ignore-names")
+    print(seeker.probe(seekBy: delta), terminator: "")
+    exit(0)
 }
 
 let app = NSApplication.shared

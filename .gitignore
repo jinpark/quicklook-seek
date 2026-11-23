@@ -1,2 +1,5 @@
 build/
+vendor/
+dist/
 .DS_Store
+sparkle-private-key.txt 
