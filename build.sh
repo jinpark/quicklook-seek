@@ -26,8 +26,13 @@ lipo -create build/QuickLookSeek-arm64 build/QuickLookSeek-x86_64 \
 rm build/QuickLookSeek-arm64 build/QuickLookSeek-x86_64
 
 IDENTITY="${CODESIGN_IDENTITY:-$(security find-identity -v -p codesigning | awk -F'"' '/Apple Development/ { print $2; exit }')}"
-codesign --force --options runtime --sign "${IDENTITY:--}" "$APP"
-echo "Built $APP (signed: ${IDENTITY:-ad-hoc})"
+ENTITLEMENTS=()
+if [[ "${SANDBOX:-}" == 1 ]]; then
+  # App Sandbox build, as the Mac App Store requires.
+  ENTITLEMENTS=(--entitlements Sandbox.entitlements)
+fi
+codesign --force --options runtime ${ENTITLEMENTS[@]+"${ENTITLEMENTS[@]}"} --sign "${IDENTITY:--}" "$APP"
+echo "Built $APP (signed: ${IDENTITY:-ad-hoc}${SANDBOX:+, sandboxed})"
 
 if [[ "${1:-}" == "install" ]]; then
   pkill -x QuickLookSeek 2>/dev/null && sleep 1 || true

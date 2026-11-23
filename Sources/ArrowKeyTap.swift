@@ -1,3 +1,4 @@
+import ApplicationServices
 import CoreGraphics
 import Foundation
 
@@ -33,7 +34,11 @@ final class ArrowKeyTap {
                 return tap.handle(type: type, event: event)
             },
             userInfo: Unmanaged.passUnretained(self).toOpaque()
-        ) else { return false }
+        ) else {
+            log.debug("event tap not created (Accessibility trusted: \(AXIsProcessTrusted(), privacy: .public))")
+            return false
+        }
+        log.info("event tap started")
 
         self.port = port
         let source = CFMachPortCreateRunLoopSource(nil, port, 0)

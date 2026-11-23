@@ -1,5 +1,8 @@
 import AppKit
 import ApplicationServices
+import os
+
+let log = Logger(subsystem: "com.quicklookseek.QuickLookSeek", category: "seek")
 
 /// Finds the video timeline in an open Quick Look panel and moves it.
 ///
@@ -21,8 +24,14 @@ final class QuickLookSeeker {
         // We're called from inside the keyboard event tap; never block it for long.
         AXUIElementSetMessagingTimeout(axApp, 0.25)
 
-        guard let window = quickLookWindow(in: axApp),
-              let slider = timeline(in: window, depth: 0) else { return false }
+        guard let window = quickLookWindow(in: axApp) else {
+            log.debug("no Quick Look window in \(app.bundleIdentifier ?? "?", privacy: .public)")
+            return false
+        }
+        guard let slider = timeline(in: window, depth: 0) else {
+            log.debug("Quick Look window has no timeline")
+            return false
+        }
 
         let now = ProcessInfo.processInfo.systemUptime
         let base: Double
@@ -38,7 +47,8 @@ final class QuickLookSeeker {
         let hi: Double = attribute(slider, kAXMaxValueAttribute) ?? .greatestFiniteMagnitude
         let target = min(hi, max(lo, base + delta))
 
-        AXUIElementSetAttributeValue(slider, kAXValueAttribute as CFString, NSNumber(value: target))
+        let result = AXUIElementSetAttributeValue(slider, kAXValueAttribute as CFString, NSNumber(value: target))
+        log.debug("seek \(base, privacy: .public) -> \(target, privacy: .public), AXError \(result.rawValue, privacy: .public)")
         lastSlider = slider
         lastTarget = target
         lastAt = now

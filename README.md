@@ -29,3 +29,15 @@ with subrole `Quick Look`. For media it contains an `AXSlider` described as
 tap catches ←/→, finds that slider in the frontmost app, and writes a new value.
 
 `quicklook-seek.lua` is the original Hammerspoon prototype of the same idea.
+
+## Mac App Store / App Sandbox
+
+Not possible with this approach. `SANDBOX=1 ./build.sh` builds a sandboxed
+copy: its event tap still starts, but every Accessibility call into Finder is
+blocked (`deny mach-lookup com.apple.axserver (per-pid)` in the system log),
+so it can't read or move the timeline. A
+`temporary-exception.mach-lookup.global-name` entitlement for
+`com.apple.axserver` doesn't help either. Distribute it outside the store
+(Developer ID + notarization) instead.
+
+Debug logging: `log stream --level debug --predicate 'subsystem == "com.quicklookseek.QuickLookSeek"'`
