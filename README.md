@@ -2,6 +2,9 @@
 
 A tiny menu bar app that lets you seek Quick Look videos with the arrow keys.
 
+Website: <https://jinpark.github.io/quicklook-seek/> (a static page in `docs/`,
+served by GitHub Pages from the `main` branch's `/docs` folder).
+
 | Keys      | Action                         |
 |-----------|--------------------------------|
 | ← / →     | Seek back / forward (default 5s)  |

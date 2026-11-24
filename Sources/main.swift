@@ -81,6 +81,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SPUSta
         let login = item("Launch at Login", #selector(toggleLaunchAtLogin))
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
+        menu.addItem(.separator())
+        menu.addItem(item("About QuickLook Seek", #selector(showAbout)))
         let updates = NSMenuItem(title: "Check for Updates…",
                                  action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)),
                                  keyEquivalent: "")
@@ -131,6 +133,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SPUSta
             alert.messageText = "Couldn't change Launch at Login"
             alert.runModal()
         }
+    }
+
+    // MARK: - About
+
+    static let websiteURL = URL(string: "https://jinpark.github.io/quicklook-seek/")!
+    static let sourceURL = URL(string: "https://github.com/jinpark/quicklook-seek")!
+
+    @objc private func showAbout() {
+        // Name, icon, version and copyright come from Info.plist; we add the
+        // blurb and links. An accessory app has to activate itself, or the
+        // panel opens behind whatever app is in front.
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.orderFrontStandardAboutPanel(options: [.credits: aboutCredits()])
+    }
+
+    private func aboutCredits() -> NSAttributedString {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        paragraph.paragraphSpacing = 6
+        let base: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+            .foregroundColor: NSColor.labelColor,
+            .paragraphStyle: paragraph,
+        ]
+        let credits = NSMutableAttributedString(
+            string: "Seek Quick Look videos with the arrow keys.\n", attributes: base)
+        credits.append(NSAttributedString(string: "Website", attributes: base.merging([.link: Self.websiteURL]) { $1 }))
+        credits.append(NSAttributedString(string: "  ·  ", attributes: base))
+        credits.append(NSAttributedString(string: "Source on GitHub", attributes: base.merging([.link: Self.sourceURL]) { $1 }))
+        return credits
     }
 
     // MARK: - Accessibility

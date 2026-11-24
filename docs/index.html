@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuickLook Seek</title>
+  <meta name="description" content="A tiny macOS menu bar app that lets you seek Quick Look videos with the arrow keys.">
+  <meta property="og:title" content="QuickLook Seek">
+  <meta property="og:description" content="Seek Quick Look videos with the arrow keys. A tiny, free menu bar app for macOS.">
+  <meta property="og:image" content="https://jinpark.github.io/quicklook-seek/icon.png">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <style>
+    :root {
+      --bg: #f7f8fc;
+      --surface: #ffffff;
+      --text: #14162b;
+      --muted: #5d6280;
+      --border: #e3e6f2;
+      --accent: #4659e3;
+      --accent-2: #6f9bff;
+      --accent-ink: #ffffff;
+      --key-bg: #ffffff;
+      --key-border: #cfd3e6;
+      --key-shadow: #b9bed6;
+      --code-bg: #eef0f8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e0f1a;
+        --surface: #171928;
+        --text: #eceefa;
+        --muted: #9aa0c0;
+        --border: #262a40;
+        --accent: #7088ff;
+        --accent-2: #8fb0ff;
+        --accent-ink: #0e0f1a;
+        --key-bg: #22253a;
+        --key-border: #353a56;
+        --key-shadow: #0a0b14;
+        --code-bg: #1f2236;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+
+    /* Hero */
+    header {
+      text-align: center;
+      padding: 72px 0 40px;
+      background:
+        radial-gradient(60% 55% at 50% 0%, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent 70%);
+    }
+    .app-icon { width: 128px; height: 128px; display: block; margin: 0 auto 20px; }
+    h1 {
+      font: 700 clamp(36px, 7vw, 56px)/1.05 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+      letter-spacing: -0.025em;
+      margin: 0 0 14px;
+    }
+    .tagline { font-size: clamp(18px, 3vw, 22px); color: var(--muted); margin: 0 auto 30px; max-width: 30ch; }
+    .cta { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .button {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 22px; border-radius: 999px;
+      font-weight: 600; font-size: 16px;
+      border: 1px solid transparent;
+    }
+    .button:hover { text-decoration: none; }
+    .button.primary {
+      background: linear-gradient(180deg, var(--accent-2), var(--accent));
+      color: #fff;
+      box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent);
+    }
+    .button.primary:hover { filter: brightness(1.06); }
+    .button.secondary { border-color: var(--border); color: var(--text); background: var(--surface); }
+    .button.secondary:hover { border-color: var(--key-border); }
+    .button svg { width: 18px; height: 18px; flex: none; }
+    .fineprint { margin-top: 14px; font-size: 14px; color: var(--muted); }
+
+    /* Demo */
+    .demo { padding: 24px 0 56px; }
+    .window {
+      max-width: 640px; margin: 0 auto;
+      border-radius: 14px; overflow: hidden;
+      background: #1c1d22;
+      box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 30px 60px rgba(20, 24, 60, .28), 0 0 0 1px rgba(0,0,0,.25);
+    }
+    .titlebar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; background: #2a2b31; color: #c9cad3; font-size: 13px;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+    .titlebar .name { flex: 1; text-align: center; margin-right: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .screen {
+      position: relative; aspect-ratio: 16 / 9;
+      background:
+        radial-gradient(circle at 72% 30%, #ffd59a 0 7%, transparent 7.5%),
+        linear-gradient(180deg, #ff9f7a 0%, #c65c9b 45%, #3b2f78 75%, #1d1b44 100%);
+      overflow: hidden;
+    }
+    .screen::before, .screen::after {
+      content: ""; position: absolute; left: -10%; right: -10%; border-radius: 50% 50% 0 0;
+    }
+    .screen::before { bottom: -38%; height: 70%; background: #2b2463; }
+    .screen::after { bottom: -52%; height: 75%; background: #17153a; left: 20%; right: -30%; }
+    .toast {
+      position: absolute; top: 50%; left: 50%; z-index: 2;
+      transform: translate(-50%, -50%) scale(.9);
+      padding: 12px 20px; border-radius: 14px;
+      background: rgba(20, 20, 28, .62); color: #fff;
+      font: 600 22px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      opacity: 0; transition: opacity .25s, transform .25s;
+      pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); transition-duration: .08s; }
+    .controls {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; background: #23242a; color: #e6e7ee;
+      font: 500 12px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    .controls .play { width: 14px; height: 14px; flex: none; fill: #e6e7ee; }
+    .track { position: relative; flex: 1; height: 5px; border-radius: 3px; background: #4a4b55; }
+    .fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: #e6e7ee; transition: width .18s ease-out; }
+    .knob {
+      position: absolute; top: 50%; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px;
+      border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.5);
+      transition: left .18s ease-out;
+    }
+
+    .keys { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
+    .key {
+      min-width: 54px; height: 50px; padding: 0 14px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 10px; border: 1px solid var(--key-border);
+      background: var(--key-bg); color: var(--text);
+      font: 500 20px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+      box-shadow: 0 3px 0 var(--key-shadow);
+      cursor: pointer; user-select: none; -webkit-user-select: none;
+      transition: transform .06s, box-shadow .06s;
+    }
+    .key.wide { font-size: 15px; min-width: 76px; }
+    .key[aria-pressed="true"], .key.down { transform: translateY(3px); box-shadow: 0 0 0 var(--key-shadow); }
+    .key[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 14%, var(--key-bg)); border-color: var(--accent); }
+    .key:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .hint { text-align: center; color: var(--muted); font-size: 14px; margin-top: 14px; }
+
+    /* Sections */
+    section { padding: 48px 0; border-top: 1px solid var(--border); }
+    h2 {
+      font: 700 28px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      letter-spacing: -0.015em; margin: 0 0 24px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+    .card h3 { margin: 0 0 6px; font-size: 17px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    .card .glyph {
+      width: 36px; height: 36px; border-radius: 9px; margin-bottom: 14px;
+      display: grid; place-items: center;
+      background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
+    }
+    .card .glyph svg { width: 20px; height: 20px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 16px; }
+    th, td { text-align: left; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    th { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+    kbd {
+      display: inline-block; min-width: 26px; padding: 3px 7px; margin-right: 2px;
+      border: 1px solid var(--key-border); border-bottom-width: 2px; border-radius: 6px;
+      background: var(--key-bg); font: 500 14px/1.2 -apple-system, BlinkMacSystemFont, sans-serif; text-align: center;
+    }
+
+    ol.steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: grid; gap: 18px; }
+    ol.steps li { counter-increment: step; position: relative; padding-left: 48px; }
+    ol.steps li::before {
+      content: counter(step);
+      position: absolute; left: 0; top: -2px;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 15px;
+    }
+    ol.steps strong { display: block; }
+    ol.steps span { color: var(--muted); font-size: 15px; }
+    code { font: 14px/1.4 ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg); padding: 2px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+
+    .prose p { margin: 0 0 14px; color: var(--muted); }
+    .prose p strong { color: var(--text); }
+
+    footer { padding: 32px 0 48px; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+    @media (max-width: 560px) {
+      header { padding-top: 48px; }
+      .app-icon { width: 104px; height: 104px; }
+      .wrap { padding: 0 16px; }
+      .key { min-width: 48px; height: 46px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .fill, .knob, .toast, .key { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <img class="app-icon" src="icon.png" alt="QuickLook Seek app icon" width="128" height="128">
+      <h1>QuickLook Seek</h1>
+      <p class="tagline">Skip around Quick Look videos with the arrow keys.</p>
+      <div class="cta">
+        <a class="button primary" href="https://github.com/jinpark/quicklook-seek/releases/latest">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v10M5.5 8.5 10 13l4.5-4.5M4 17h12"/></svg>
+          Download for Mac
+        </a>
+        <a class="button secondary" href="https://github.com/jinpark/quicklook-seek">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          Source on GitHub
+        </a>
+      </div>
+      <p class="fineprint">Free and open source · macOS 13 Ventura or later · Apple silicon &amp; Intel</p>
+    </div>
+  </header>
+
+  <div class="demo">
+    <div class="wrap">
+      <div class="window" aria-label="Quick Look preview of a video">
+        <div class="titlebar">
+          <span class="dot" style="background:#ff5f57"></span>
+          <span class="dot" style="background:#febc2e"></span>
+          <span class="dot" style="background:#28c840"></span>
+          <span class="name">sunset-timelapse.mov</span>
+        </div>
+        <div class="screen">
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        </div>
+        <div class="controls">
+          <svg class="play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z"/></svg>
+          <span id="now">0:42</span>
+          <div class="track"><div class="fill" id="fill"></div><div class="knob" id="knob"></div></div>
+          <span id="total">3:15</span>
+        </div>
+      </div>
+      <div class="keys">
+        <button class="key wide" id="key-shift" aria-pressed="false" title="Hold for 30-second steps">⇧ shift</button>
+        <button class="key" id="key-left" aria-label="Seek back">←</button>
+        <button class="key" id="key-right" aria-label="Seek forward">→</button>
+      </div>
+      <p class="hint">Try it — press <kbd>←</kbd> <kbd>→</kbd> on your keyboard, or click the keys.</p>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <h2>Small app, one job</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="glyph"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6 4 10l4 4M12 6l4 4-4 4"/></svg></div>
+          <h3>Arrow-key seeking</h3>
+          <p>Jump back or forward 5 seconds, or 30 with Shift. Both step sizes are adjustable from the menu bar.</p>
+        </div>
+        <div class="card">
+          <div class="glyph"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg></div>
+          <h3>Only when it matters</h3>
+          <p>Keys are caught only while a Quick Look window with a video or audio timeline is open. Everywhere else, arrows behave as usual.</p>
+        </div>
+        <div class="card">
+          <div class="glyph"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="3" rx="1"/><path d="M6 11h8M8 15h4"/></svg></div>
+          <h3>Lives in the menu bar</h3>
+          <p>No Dock icon, no windows. Toggle it off, change step sizes, or launch it at login from one small menu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Shortcuts</h2>
+      <table>
+        <thead><tr><th>Keys</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Seek back / forward (5s by default)</td></tr>
+          <tr><td><kbd>⇧</kbd><kbd>←</kbd> <kbd>⇧</kbd><kbd>→</kbd></td><td>Seek back / forward (30s by default)</td></tr>
+        </tbody>
+      </table>
+      <p class="fineprint" style="text-align:left">Combinations with <kbd>⌘</kbd> <kbd>⌥</kbd> <kbd>⌃</kbd> are never touched.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Get started</h2>
+      <ol class="steps">
+        <li><strong>Download and unzip</strong><span>Grab the latest release and drag <em>QuickLook Seek</em> into your Applications folder.</span></li>
+        <li><strong>Open it and allow Accessibility access</strong><span>System Settings → Privacy &amp; Security → Accessibility, then switch on QuickLook Seek. It needs this to see the Quick Look timeline and move it.</span></li>
+        <li><strong>Press space on a video, then use the arrows</strong><span>That's it. Updates arrive automatically through the menu bar icon.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap prose">
+      <h2>How it works</h2>
+      <p>Quick Look's player exposes its timeline as an accessibility slider whose value is the playback position in seconds. When you press an arrow key, QuickLook Seek checks whether the frontmost app has a Quick Look window with that slider, and if so, moves it. If not, the key passes through untouched.</p>
+      <p><strong>Nothing leaves your Mac.</strong> The app doesn't collect analytics. The only network request it makes is checking GitHub for updates.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <span>QuickLook Seek · made by <a href="https://github.com/jinpark">Jin Park</a></span>
+      <span><a href="https://github.com/jinpark/quicklook-seek/releases">Release notes</a> · <a href="https://github.com/jinpark/quicklook-seek/issues">Report an issue</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var DURATION = 195, STEP = 5, BIG = 30;
+      var t = 42, shiftLatched = false, toastTimer;
+      var fill = document.getElementById('fill');
+      var knob = document.getElementById('knob');
+      var now = document.getElementById('now');
+      var toast = document.getElementById('toast');
+      var shiftKey = document.getElementById('key-shift');
+      var leftKey = document.getElementById('key-left');
+      var rightKey = document.getElementById('key-right');
+
+      function fmt(s) { s = Math.round(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+      function render() {
+        var pct = (t / DURATION) * 100;
+        fill.style.width = pct + '%';
+        knob.style.left = pct + '%';
+        now.textContent = fmt(t);
+      }
+      function flash(el) {
+        el.classList.add('down');
+        setTimeout(function () { el.classList.remove('down'); }, 120);
+      }
+      function seek(dir, big) {
+        var amount = big ? BIG : STEP;
+        t = Math.min(DURATION, Math.max(0, t + dir * amount));
+        render();
+        toast.textContent = (dir < 0 ? '◀◀ ' : '▶▶ ') + amount + 's';
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 550);
+      }
+      function setShift(on) {
+        shiftLatched = on;
+        shiftKey.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+
+      shiftKey.addEventListener('click', function () { setShift(!shiftLatched); });
+      leftKey.addEventListener('click', function (e) { seek(-1, shiftLatched || e.shiftKey); });
+      rightKey.addEventListener('click', function (e) { seek(1, shiftLatched || e.shiftKey); });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.metaKey || e.altKey || e.ctrlKey) return;
+        if (e.key === 'Shift') { shiftKey.classList.add('down'); return; }
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        var tag = (e.target && e.target.tagName) || '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        e.preventDefault();
+        var left = e.key === 'ArrowLeft';
+        flash(left ? leftKey : rightKey);
+        seek(left ? -1 : 1, e.shiftKey || shiftLatched);
+      });
+      document.addEventListener('keyup', function (e) {
+        if (e.key === 'Shift') shiftKey.classList.remove('down');
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
