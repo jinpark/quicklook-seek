@@ -5,6 +5,14 @@
     <link>https://raw.githubusercontent.com/jinpark/quicklook-seek/main/appcast.xml</link>
     <!-- items: newest first; ./build.sh release adds them here -->
     <item>
+      <title>Version 1.1</title>
+      <pubDate>Tue, 24 Nov 2026 19:36:32 +0000</pubDate>
+      <sparkle:version>2</sparkle:version>
+      <sparkle:shortVersionString>1.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/jinpark/quicklook-seek/releases/download/v1.1/QuickLookSeek-1.1.zip" type="application/octet-stream" sparkle:edSignature="RSJQRYQ9Rr8QG9nP09znyTBCELMattvL4xlI9uevZGJ2SIcShHOV6x71PGYrrMvjui7vNrMDZkWtih/piiDRBw==" length="1554314"/>
+    </item>
+    <item>
       <title>Version 1.0</title>
       <pubDate>Mon, 23 Nov 2026 20:56:10 +0000</pubDate>
       <sparkle:version>1</sparkle:version>
