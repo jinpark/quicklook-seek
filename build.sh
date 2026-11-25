@@ -6,9 +6,11 @@
 #   ./build.sh release    build, sign with Developer ID, notarize, staple, zip
 #                         into dist/, and add a signed entry to appcast.xml
 #
-# Local builds sign with your first "Apple Development" identity if you have
-# one (set CODESIGN_IDENTITY to override). A stable signature means macOS keeps
-# the Accessibility permission across rebuilds; ad-hoc signing ("-") loses it.
+# Local builds sign with your "Developer ID Application" identity if you have
+# one, else your first "Apple Development" identity (set CODESIGN_IDENTITY to
+# override). macOS ties the Accessibility permission to the signing
+# certificate, so signing local builds the same way as releases keeps it
+# across rebuilds and Sparkle updates; ad-hoc signing ("-") loses it.
 #
 # Release builds need a "Developer ID Application" certificate (set
 # DEVELOPER_ID to pick one), notarization credentials saved once with:
@@ -37,7 +39,8 @@ find_identity() {
 
 case "$MODE" in
   build|install)
-    IDENTITY="${CODESIGN_IDENTITY:-$(find_identity "Apple Development")}"
+    IDENTITY="${CODESIGN_IDENTITY:-$(find_identity "Developer ID Application")}"
+    IDENTITY="${IDENTITY:-$(find_identity "Apple Development")}"
     ;;
   release)
     IDENTITY="${DEVELOPER_ID:-$(find_identity "Developer ID Application")}"
