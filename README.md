@@ -24,11 +24,19 @@ Builds a universal app, copies it to `/Applications`, and launches it. On first
 launch, enable **QuickLook Seek** in System Settings → Privacy & Security →
 Accessibility. Step sizes and Launch at Login are in the menu bar icon.
 
-Local builds are signed with your Developer ID certificate when you have one
-(otherwise Apple Development), the same as releases. macOS ties the
-Accessibility permission to the signing certificate, so switching between a
-build signed one way and a release signed the other silently drops it. If
-seeking stops working after that, reset and re-grant it:
+Local builds are signed with your Apple Development certificate if you have
+one, otherwise ad-hoc. macOS ties the Accessibility permission to the signing
+certificate, so a build signed one way and the official release (Developer ID)
+don't share it: switching between them silently drops it. If you have a
+Developer ID certificate and switch between your own builds and releases,
+sign your builds the same way:
+
+```bash
+USE_DEVELOPER_ID=1 ./build.sh install
+```
+
+If seeking stops working after switching, reset the permission and grant it
+again:
 
 ```bash
 tccutil reset Accessibility net.jinpark.quicklookseek

@@ -6,11 +6,16 @@
 #   ./build.sh release    build, sign with Developer ID, notarize, staple, zip
 #                         into dist/, and add a signed entry to appcast.xml
 #
-# Local builds sign with your "Developer ID Application" identity if you have
-# one, else your first "Apple Development" identity (set CODESIGN_IDENTITY to
-# override). macOS ties the Accessibility permission to the signing
-# certificate, so signing local builds the same way as releases keeps it
-# across rebuilds and Sparkle updates; ad-hoc signing ("-") loses it.
+# Local builds sign with your first "Apple Development" identity if you have
+# one, else ad-hoc. macOS ties the Accessibility permission to the signing
+# certificate: a stable signature keeps it across rebuilds; ad-hoc ("-") loses
+# it every time.
+#
+# USE_DEVELOPER_ID=1 signs local builds with your "Developer ID Application"
+# identity instead (DEVELOPER_ID picks one), the same as releases. Use it if
+# you also install the notarized releases or take Sparkle updates on the same
+# Mac, so switching between the two keeps the permission.
+# CODESIGN_IDENTITY overrides both.
 #
 # Release builds need a "Developer ID Application" certificate (set
 # DEVELOPER_ID to pick one), notarization credentials saved once with:
@@ -39,8 +44,17 @@ find_identity() {
 
 case "$MODE" in
   build|install)
-    IDENTITY="${CODESIGN_IDENTITY:-$(find_identity "Developer ID Application")}"
-    IDENTITY="${IDENTITY:-$(find_identity "Apple Development")}"
+    if [[ -n "${CODESIGN_IDENTITY:-}" ]]; then
+      IDENTITY="$CODESIGN_IDENTITY"
+    elif [[ "${USE_DEVELOPER_ID:-}" == 1 ]]; then
+      IDENTITY="${DEVELOPER_ID:-$(find_identity "Developer ID Application")}"
+      if [[ -z "$IDENTITY" ]]; then
+        echo "error: USE_DEVELOPER_ID=1 but no \"Developer ID Application\" certificate in your keychain." >&2
+        exit 1
+      fi
+    else
+      IDENTITY="$(find_identity "Apple Development")"
+    fi
     ;;
   release)
     IDENTITY="${DEVELOPER_ID:-$(find_identity "Developer ID Application")}"
