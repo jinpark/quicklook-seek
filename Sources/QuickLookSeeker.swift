@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 import os
 
-let log = Logger(subsystem: "net.jinpark.quicklookseek", category: "seek")
+let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "QuickLookSeek", category: "seek")
 
 /// Finds the video timeline in an open Quick Look panel and moves it.
 ///

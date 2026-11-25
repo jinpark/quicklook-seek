@@ -137,8 +137,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SPUSta
 
     // MARK: - About
 
-    static let websiteURL = URL(string: "https://jinpark.github.io/quicklook-seek/")!
-    static let sourceURL = URL(string: "https://github.com/jinpark/quicklook-seek")!
+    // Set in Info.plist, so a fork changes them in one place.
+    private static func infoURL(_ key: String) -> URL? {
+        (Bundle.main.object(forInfoDictionaryKey: key) as? String).flatMap(URL.init(string:))
+    }
 
     @objc private func showAbout() {
         // Name, icon, version and copyright come from Info.plist; we add the
@@ -158,10 +160,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SPUSta
             .paragraphStyle: paragraph,
         ]
         let credits = NSMutableAttributedString(
-            string: "Seek Quick Look videos with the arrow keys.\n", attributes: base)
-        credits.append(NSAttributedString(string: "Website", attributes: base.merging([.link: Self.websiteURL]) { $1 }))
-        credits.append(NSAttributedString(string: "  ·  ", attributes: base))
-        credits.append(NSAttributedString(string: "Source on GitHub", attributes: base.merging([.link: Self.sourceURL]) { $1 }))
+            string: "Seek Quick Look videos with the arrow keys.", attributes: base)
+        let links = [("Website", "QLSWebsiteURL"), ("Source code", "QLSSourceURL")]
+            .compactMap { title, key in Self.infoURL(key).map { (title, $0) } }
+        for (index, (title, url)) in links.enumerated() {
+            credits.append(NSAttributedString(string: index == 0 ? "\n" : "  ·  ", attributes: base))
+            credits.append(NSAttributedString(string: title, attributes: base.merging([.link: url]) { $1 }))
+        }
         return credits
     }
 

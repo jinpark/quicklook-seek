@@ -35,8 +35,10 @@ VERSION="$(plist CFBundleShortVersionString)"
 BUILD_NUMBER="$(plist CFBundleVersion)"
 MIN_MACOS="$(plist LSMinimumSystemVersion)"
 NOTARY_PROFILE="${NOTARY_PROFILE:-quicklook-seek}"
-SPARKLE_ACCOUNT="net.jinpark.quicklookseek"
-GITHUB_REPO="jinpark/quicklook-seek"
+# The project's identity lives in Info.plist: the Sparkle signing key is
+# stored under the bundle ID, and releases go to the repo QLSSourceURL names.
+SPARKLE_ACCOUNT="$(plist CFBundleIdentifier)"
+GITHUB_REPO="$( (plist QLSSourceURL 2>/dev/null || true) | sed -E 's#^https://github\.com/##; s#(\.git)?/*$##')"
 
 find_identity() {
   security find-identity -v -p codesigning | awk -F'"' -v kind="$1" '$2 ~ "^" kind ":" { print $2; exit }'
@@ -67,6 +69,11 @@ case "$MODE" in
     if ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
       echo "error: notarization profile \"$NOTARY_PROFILE\" not found or not working. Save it with:" >&2
       echo "  xcrun notarytool store-credentials $NOTARY_PROFILE --apple-id <id> --team-id <team>" >&2
+      exit 1
+    fi
+    if [[ ! "$GITHUB_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+      echo "error: set QLSSourceURL in Info.plist to the GitHub repo releases go to" >&2
+      echo "(https://github.com/<owner>/<repo>); got \"$GITHUB_REPO\"." >&2
       exit 1
     fi
     if [[ "${SANDBOX:-}" == 1 ]]; then

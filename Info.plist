@@ -30,5 +30,9 @@
 	<string>https://raw.githubusercontent.com/jinpark/quicklook-seek/main/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>y/TkPRiM+VgIv2vGWBQfKGRK3Eijr0dAjK9aIUbanmk=</string>
+	<key>QLSWebsiteURL</key>
+	<string>https://jinpark.github.io/quicklook-seek/</string>
+	<key>QLSSourceURL</key>
+	<string>https://github.com/jinpark/quicklook-seek</string>
 </dict>
 </plist>

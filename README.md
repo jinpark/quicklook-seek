@@ -86,7 +86,7 @@ build (`scripts/fetch-sparkle.sh`) and embeds it in the app.
   (`SUFeedURL` in `Info.plist`). The repo must be public for this to work.
 - Downloads: GitHub release assets.
 - Signing: updates are signed with an EdDSA key stored in your login keychain
-  under the account `net.jinpark.quicklookseek`. Its public half is
+  under the app's bundle ID as the account (`net.jinpark.quicklookseek`). Its public half is
   `SUPublicEDKey` in `Info.plist`. **Back up the private key**: if it's lost,
   existing installs can never accept another update.
 
@@ -99,6 +99,27 @@ build (`scripts/fetch-sparkle.sh`) and embeds it in the app.
 
 "Check for Updates…" in the menu will report an error until the repo and its
 first release exist.
+
+## Forking
+
+Building from source for yourself needs no changes: your build is the same
+app and takes the official updates.
+
+To publish your own builds, give the fork its own identity. Everything the
+code and `build.sh` use comes from `Info.plist`:
+
+| Key | What it's for |
+|-----|---------------|
+| `CFBundleIdentifier` | Bundle ID; also the log subsystem and the keychain account of the Sparkle key |
+| `SUFeedURL` | Your `appcast.xml`, e.g. `https://raw.githubusercontent.com/<owner>/<repo>/main/appcast.xml` |
+| `SUPublicEDKey` | Your Sparkle public key: run `vendor/Sparkle/bin/generate_keys --account <your bundle ID>` (it prints it) |
+| `QLSSourceURL` | `https://github.com/<owner>/<repo>`: the About window links to it and releases are uploaded there |
+| `QLSWebsiteURL` | The About window's website link (remove the key to drop the link) |
+| `NSHumanReadableCopyright` | Copyright line in the About window |
+
+Then delete the `<item>`s in `appcast.xml` (they're the original project's
+releases) and point its `<link>` at your feed, and edit or delete `docs/`, the
+project website.
 
 ## How it works
 
